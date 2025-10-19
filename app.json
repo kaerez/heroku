@@ -1,7 +1,7 @@
 {
   "name": "QuickChart",
   "description": "A self-hosted service to generate chart images, word clouds, and QR codes.",
-  "repository": "https://github.com/kaerez/heroku-quickchart",
+  "repository": "https://github.com/kaerez/new-quickchart",
   "logo": "https://quickchart.io/wp-content/uploads/2020/07/logo-2.png",
   "keywords": [
     "charts",
