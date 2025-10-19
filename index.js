@@ -45,7 +45,7 @@ if (process.env.RATE_LIMIT_PER_MIN) {
     windowMs: 60 * 1000,
     max: limitMax,
     message:
-      'Please slow down your requests! This is a shared public endpoint. Email support@quickchart.io or go to https://quickchart.io/pricing/ for rate limit exceptions or to purchase a commercial license.',
+      'Please slow down your requests!',
     onLimitReached: (req) => {
       logger.info('User hit rate limit!', req.ip);
     },
@@ -58,7 +58,7 @@ if (process.env.RATE_LIMIT_PER_MIN) {
 
 app.get('/', (req, res) => {
   res.send(
-    'QuickChart is running!<br><br>If you are using QuickChart commercially, please consider <a href="https://quickchart.io/pricing/">purchasing a license</a> to support the project.',
+    'QuickChart is running!<br><br><a href="/healthcheck/">Healthcheck</a><br><br><a href="https://quickchart.io/"></a>',
   );
 });
 
