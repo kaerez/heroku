@@ -38,4 +38,3 @@ EXPOSE 3400
 
 # Define the command to run your app
 CMD [ "node", "index.js" ]
-
