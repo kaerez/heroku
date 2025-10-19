@@ -1,12 +1,21 @@
-# heroku.yml
+{
+  "name": "QuickChart",
+  "description": "A self-hosted service to generate chart images, word clouds, and QR codes.",
+  "repository": "https://github.com/kaerez/heroku-quickchart",
+  "logo": "https://github.com/kaerez/heroku-quickchart/logo.png",
+  "keywords": [
+    "charts",
+    "images",
+    "api",
+    "docker",
+    "wordcloud"
+  ],
+  "stack": "container",
+  "env": {
+    "DISABLE_TELEMETRY": {
+      "description": "Disables anonymous telemetry data collection.",
+      "value": "true"
+    }
+  }
+}
 
-build:
-  docker:
-    # This tells Heroku to build the Docker image using the
-    # Dockerfile located in the root directory.
-    web: Dockerfile
-
-run:
-  # This is the command to start the QuickChart server.
-  # It automatically uses the $PORT provided by Heroku.
-  web: node index.js
