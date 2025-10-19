@@ -12,17 +12,17 @@ This server has been enhanced with a dynamic, key-based authentication and rate-
 
 ### 1. Authentication
 
-Authentication is managed by a set of API keys you define. If at least one `authn[x]` key is defined, all protected endpoints will require a valid key.
+Authentication is managed by a set of API keys you define.
 
 #### How to Define Keys
 
 You define keys using environment variables with the syntax `authn[x]`, where `x` is a number from 0 to 9999.
 
-**Example Heroku Config Vars:**
+**Example Environmental Vars:**
 | KEY | VALUE |
 | :--- | :--- |
-| `authn[0]` | `first-secret-key-for-user-a` |
-| `authn[1]` | `another-key-for-user-b` |
+| `authn0` | `first-secret-key-for-user-a` |
+| `authn1` | `another-key-for-user-b` |
 
 #### How to Authenticate a Request
 
@@ -67,12 +67,12 @@ The value of a limit variable is a comma-separated string containing one or more
 
 | KEY | VALUE | DESCRIPTION |
 | :--- | :--- | :--- |
-| `authn[0]` | `user-a-key` | Key for User A. |
-| `limit[0]` | `rpm:60,rpd:1000` | User A can make 60 requests/minute and 1000/day. |
-| `authn[1]` | `user-b-key` | Key for User B. |
-| `limit[1]` | `1` | User B can make 1 request/second (equivalent to `rps:1`). |
-| `authn[2]` | `blocked-user-key` | Key for a blocked user. |
-| `limit[2]` | `0` | User with this key cannot make any requests. |
+| `authn0` | `user-a-key` | Key for User A. |
+| `limit0` | `rpm:60,rpd:1000` | User A can make 60 requests/minute and 1000/day. |
+| `authn1` | `user-b-key` | Key for User B. |
+| `limit1` | `1` | User B can make 1 request/second (equivalent to `rps:1`). |
+| `authn2` | `blocked-user-key` | Key for a blocked user. |
+| `limit2` | `0` | User with this key cannot make any requests. |
 | `limita` | `rph:100` | All anonymous users share a pool of 100 requests/hour. |
 
 ---
