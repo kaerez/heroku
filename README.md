@@ -92,6 +92,6 @@ The authentication and rate-limiting middleware is applied globally to most rout
 #### Public Routes (Do Not Require Authentication)
 A small number of routes are intentionally left open for basic status checks.
 * `/` (The main landing page)
-* `/telemetry`
+* `/telemetry` (Default telemetry is disabled, unlike the original repo.)
 * `/healthcheck`
 * `/healthcheck/chart`
