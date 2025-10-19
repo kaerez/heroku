@@ -20,17 +20,15 @@ RUN apt-get update && apt-get install -y \
     fonts-noto-color-emoji \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the dependency manifest and lockfile
+# Copy the dependency manifest
 COPY package.json ./
-COPY yarn.lock ./
 
 # Force git to use https instead of ssh, a common fix for CI/CD environments
 RUN git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
 
-# Install dependencies using Yarn for a more reliable build
-# --frozen-lockfile ensures it uses the exact versions from yarn.lock
+# Install dependencies using Yarn. This will generate a new yarn.lock file.
 # --production skips developer-only packages
-RUN yarn install --frozen-lockfile --production
+RUN yarn install --production
 
 # Bundle the application source code into the image
 COPY . .
