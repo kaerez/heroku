@@ -1,40 +1,31 @@
-# Use an official Node.js runtime as a parent image
-FROM node:18-slim
+FROM node:18-alpine3.17
 
-# Set the working directory in the container
-WORKDIR /usr/src/app
+ENV NODE_ENV production
 
-# Install system dependencies required for chart generation and extra features
-# This includes build tools, and libraries for graphics (cairo, pango, etc.)
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libcairo2-dev \
-    libpango1.0-dev \
-    libjpeg-dev \
-    libgif-dev \
-    librsvg2-dev \
-    # Git is required for fetching some dependencies from GitHub
-    git \
-    # Install fonts for wordcloud and watermark support
-    fonts-lato \
-    fonts-noto-color-emoji \
-    && rm -rf /var/lib/apt/lists/*
+WORKDIR /quickchart
 
-# Copy the dependency manifest
-COPY package.json ./
+RUN apk add --upgrade apk-tools
+RUN apk add --no-cache --virtual .build-deps yarn git build-base g++ python3
+RUN apk add --no-cache --virtual .npm-deps cairo-dev pango-dev libjpeg-turbo-dev librsvg-dev
+RUN apk add --no-cache --virtual .fonts libmount ttf-dejavu ttf-droid ttf-freefont ttf-liberation font-noto font-noto-emoji fontconfig
+RUN apk add --no-cache --repository https://dl-cdn.alpinelinux.org/alpine/edge/community font-wqy-zenhei
+RUN apk add --no-cache libimagequant-dev
+RUN apk add --no-cache vips-dev
+RUN apk add --no-cache --virtual .runtime-deps graphviz
 
-# Force git to use https instead of ssh, a common fix for CI/CD environments
-RUN git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
-
-# Install dependencies using Yarn. This will generate a new yarn.lock file.
-# --production skips developer-only packages
+COPY package*.json .
+COPY yarn.lock .
 RUN yarn install --production
 
-# Bundle the application source code into the image
-COPY . .
+RUN apk update
+RUN rm -rf /var/cache/apk/* && \
+    rm -rf /tmp/*
+RUN apk del .build-deps
 
-# Expose the port the app runs on
+COPY *.js ./
+COPY lib/*.js lib/
+COPY LICENSE .
+
 EXPOSE 3400
 
-# Define the command to run your app
-CMD [ "node", "index.js" ]
+ENTRYPOINT ["node", "--max-http-header-size=65536", "index.js"]
