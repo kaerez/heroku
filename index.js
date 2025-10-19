@@ -1,8 +1,8 @@
 const path = require('path');
+const fs = require('fs'); // Import the file system module
 const express = require('express');
 const javascriptStringify = require('javascript-stringify').stringify;
 const qs = require('qs');
-const rateLimit = require('express-rate-limit');
 const text2png = require('text2png');
 
 const packageJson = require('./package.json');
@@ -184,10 +184,34 @@ app.use(authAndRateLimit);
 // Serve static files from the 'public' directory (now protected)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Route for the interactive QR code page (now protected)
+// MODIFIED Route for the interactive QR code page
 app.get('/qr-code-api', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/qr-code-api.html'));
+  const filePath = path.join(__dirname, 'public/qr-code-api.html');
+  fs.readFile(filePath, 'utf8', (err, data) => {
+    if (err) {
+      logger.error('Could not read qr-code-api.html', err);
+      return res.status(500).send('Error loading page.');
+    }
+
+    // Find the key from the request (header or query). Will be empty for anonymous.
+    let apiKey = '';
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      apiKey = authHeader.substring(7, authHeader.length);
+    } else if (req.query.key) {
+      apiKey = req.query.key;
+    }
+
+    // Inject the key (or an empty string) into a placeholder in the HTML
+    const modifiedHtml = data.replace(
+      "const apiKey = ''", // Placeholder in the HTML
+      `const apiKey = '${apiKey}'`  // Injected key
+    );
+
+    res.send(modifiedHtml);
+  });
 });
+
 
 // All API routes are now implicitly protected by the app.use(authAndRateLimit) above
 app.get('/chart', (req, res) => {
@@ -284,8 +308,6 @@ app.get('/qr', (req, res) => {
 app.get('/gchart', handleGChart);
 
 
-// --- Unchanged Code from original file continues below ---
-
 function utf8ToAscii(str) {
   const enc = new TextEncoder();
   const u8s = enc.encode(str);
@@ -305,7 +327,7 @@ function failPng(res, msg, statusCode = 500) {
     'X-quickchart-error': sanitizeErrorHeader(msg),
   });
   res.end(
-    text2png(`Chart Error: ${msg}`, {
+    text2png(`Error: ${msg}`, {
       padding: 10,
       backgroundColor: '#fff',
     }),
