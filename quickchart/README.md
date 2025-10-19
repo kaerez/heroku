@@ -1,5 +1,4 @@
 # Quickchart
-# Linkwarden
 - [GH]([https://github.com/linkwarden/linkwarden](https://github.com/typpo/quickchart))
 - [Web](https://quickchart.io/))
 
