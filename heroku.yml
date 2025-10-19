@@ -1,21 +1,17 @@
-{
-  "name": "QuickChart",
-  "description": "A self-hosted service to generate chart images, word clouds, and QR codes.",
-  "repository": "https://github.com/kaerez/heroku-quickchart",
-  "logo": "https://github.com/kaerez/heroku-quickchart/logo.png",
-  "keywords": [
-    "charts",
-    "images",
-    "api",
-    "docker",
-    "wordcloud"
-  ],
-  "stack": "container",
-  "env": {
-    "DISABLE_TELEMETRY": {
-      "description": "Disables anonymous telemetry data collection.",
-      "value": "true"
-    }
-  }
-}
+# This file instructs Heroku on how to build and run the Docker container.
+
+# The 'setup' section configures the app's environment during creation.
+setup:
+  config:
+    # This sets the environment variable to disable telemetry.
+    DISABLE_TELEMETRY: 'true'
+
+# The 'build' section tells Heroku to use your Dockerfile.
+build:
+  docker:
+    web: Dockerfile
+
+# The 'run' section defines the command to start the application.
+run:
+  web: node index.js
 
