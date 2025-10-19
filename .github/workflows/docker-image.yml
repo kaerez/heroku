@@ -1,18 +1,66 @@
-name: Docker Image CI
+# .github/workflows/docker-publish.yml
 
+# This workflow builds a Docker image, saves it as an artifact,
+# and pushes it to the GitHub Container Registry (ghcr.io).
+
+name: Docker Publish CI
+
+# Controls when the action will run.
 on:
+  # Triggers the workflow on push events but only for the "main" branch
   push:
     branches: [ "main" ]
+  # Triggers the workflow on pull request events for the "main" branch
   pull_request:
     branches: [ "main" ]
 
 jobs:
-
-  build:
-
+  build-and-push:
     runs-on: ubuntu-latest
+    # Grant permissions for the GITHUB_TOKEN to upload packages
+    permissions:
+      contents: read
+      packages: write
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+      # 1. Check out the repository code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Log in to the GitHub Container Registry (GHCR)
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # 3. Extract metadata (tags, labels) for Docker
+      # This step creates smart tags based on the Git branch, tag, or commit hash
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+
+      # 4. Build the image, push it to GHCR, and save it as a local file
+      - name: Build and push Docker image
+        id: build-and-push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          # Push to the registry only when the event is a push to the main branch
+          push: ${{ github.event_name == 'push' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Save the image as a .tar file in the temporary directory
+          outputs: type=docker,dest=/tmp/quickchart-image.tar
+
+      # 5. Upload the .tar file as a build artifact
+      # This allows you to download the exact image that was built directly from the workflow run.
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: /tmp/quickchart-image.tar
