@@ -13,31 +13,26 @@ RUN apt-get update && apt-get install -y \
     libjpeg-dev \
     libgif-dev \
     librsvg2-dev \
-    # -- ADDED TO FIX GIT-BASED NPM DEPENDENCIES --
+    # Git is required for fetching some dependencies from GitHub
     git \
-    # -- ADDED FOR WORDCLOUD & WATERMARK SUPPORT --
-    # Install a common set of fonts used by wordcloud and watermarking.
+    # Install fonts for wordcloud and watermark support
     fonts-lato \
     fonts-noto-color-emoji \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy package.json and yarn.lock
-COPY package*.json ./
+# Copy the dependency manifest and lockfile
+COPY package.json ./
 COPY yarn.lock ./
 
-# -- CORRECTED TO FIX SSH AUTHENTICATION ERROR --
-# Force git to use https instead of the ssh protocol for github dependencies
+# Force git to use https instead of ssh, a common fix for CI/CD environments
 RUN git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
 
-# Install app dependencies using the --legacy-peer-deps flag to resolve conflicts
-# and the modern --omit=dev flag instead of --production.
-RUN npm install --omit=dev --legacy-peer-deps
+# Install dependencies using Yarn for a more reliable build
+# --frozen-lockfile ensures it uses the exact versions from yarn.lock
+# --production skips developer-only packages
+RUN yarn install --frozen-lockfile --production
 
-# -- ADDED TO FIX VULNERABILITIES --
-# Attempt to fix known security vulnerabilities, forcing updates where possible.
-RUN npm audit fix --force
-
-# Bundle app source
+# Bundle the application source code into the image
 COPY . .
 
 # Expose the port the app runs on
