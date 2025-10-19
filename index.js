@@ -34,7 +34,7 @@ app.use(
   }),
 );
 
-app.use(express.urlencoded());
+app.use(express.urlencoded({ extended: false }));
 
 if (process.env.RATE_LIMIT_PER_MIN) {
   const limitMax = parseInt(process.env.RATE_LIMIT_PER_MIN, 10);
@@ -55,20 +55,21 @@ if (process.env.RATE_LIMIT_PER_MIN) {
   app.use('/chart', limiter);
 }
 
-// MODIFICATION 1: Serve static files from the 'public' directory
+// Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// MODIFICATION 2: Updated root message with a link
+// Updated root message with the correct link
 app.get('/', (req, res) => {
   res.send(`
     <h1>QuickChart Image API</h1>
     <p>This is the open-source QuickChart API server.</p>
+    <p>See the <a href="https://quickchart.io/documentation/">documentation</a> for usage instructions.</p>
     <p>Try our interactive <a href="/qr-code-api">QR Code Builder</a>.</p>
     <p><a href="/healthcheck">Healthcheck</a></p>
   `);
 });
 
-// MODIFICATION 3: Added new route for the interactive QR code page
+// Route for the interactive QR code page
 app.get('/qr-code-api', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/qr-code-api.html'));
 });
