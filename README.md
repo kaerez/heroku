@@ -86,12 +86,12 @@ The authentication and rate-limiting middleware is applied globally to most rout
 * `/chart` (GET and POST)
 * `/qr`
 * `/gchart`
-* `/qr-code-api` (the interactive documentation page)
+* `/qr-code-api` (the **interactive** web UI)
 * All static assets in the `/public` directory (e.g., CSS, JS files).
 
 #### Public Routes (Do Not Require Authentication)
 A small number of routes are intentionally left open for basic status checks.
-* `/` (The main landing page)
-* `/telemetry` (Default telemetry is **disabled**, unlike the original repo.)
+* `/` (the main landing page)
+* `/telemetry` (default telemetry is **disabled**, unlike the original repo.)
 * `/healthcheck`
 * `/healthcheck/chart`
