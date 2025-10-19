@@ -1,5 +1,4 @@
 const path = require('path');
-
 const express = require('express');
 const javascriptStringify = require('javascript-stringify').stringify;
 const qs = require('qs');
@@ -56,18 +55,20 @@ if (process.env.RATE_LIMIT_PER_MIN) {
   app.use('/chart', limiter);
 }
 
-// Serve static files from the 'public' directory
+// MODIFICATION 1: Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
 
+// MODIFICATION 2: Updated root message with a link
 app.get('/', (req, res) => {
-  res.send(
-    'QuickChart is running!<br><br>
-    <a href="/qr-code-api.html">Interactive QR Code Builder</a><br><br>
-    <a href="/healthcheck/">Healthcheck</a><br><br><a href="https://quickchart.io/"></a>',
-  );
+  res.send(`
+    <h1>QuickChart Image API</h1>
+    <p>This is the open-source QuickChart API server.</p>
+    <p>Try our interactive <a href="/qr-code-api">QR Code Builder</a>.</p>
+    <p><a href="/healthcheck">Healthcheck</a></p>
+  `);
 });
 
-// NEW route for the interactive QR code page
+// MODIFICATION 3: Added new route for the interactive QR code page
 app.get('/qr-code-api', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/qr-code-api.html'));
 });
@@ -150,7 +151,6 @@ function renderChartToPng(req, res, opts) {
     res
       .type('image/png')
       .set({
-        // 1 week cache
         'Cache-Control': isDev ? 'no-cache' : 'public, max-age=604800',
       })
       .send(buf)
@@ -165,7 +165,6 @@ function renderChartToSvg(req, res, opts) {
     res
       .type('image/svg+xml')
       .set({
-        // 1 week cache
         'Cache-Control': isDev ? 'no-cache' : 'public, max-age=604800',
       })
       .send(buf)
@@ -182,8 +181,6 @@ async function renderChartToPdf(req, res, opts) {
     res.writeHead(200, {
       'Content-Type': 'application/pdf',
       'Content-Length': pdfBuf.length,
-
-      // 1 week cache
       'Cache-Control': isDev ? 'no-cache' : 'public, max-age=604800',
     });
     res.end(pdfBuf);
@@ -202,7 +199,6 @@ function doChartjsRender(req, res, opts) {
 
   let untrustedInput = opts.chart;
   if (opts.encoding === 'base64') {
-    // TODO(ian): Move this decoding up the call stack.
     try {
       untrustedInput = Buffer.from(opts.chart, 'base64').toString('utf8');
     } catch (err) {
@@ -245,10 +241,7 @@ async function handleGraphviz(req, res, graphVizDef, opts) {
 }
 
 function handleGChart(req, res) {
-  // TODO(ian): Move these special cases into Google Image Charts-specific
-  // handler.
   if (req.query.cht.startsWith('gv')) {
-    // Graphviz chart
     const format = req.query.chof;
     const engine = req.query.cht.indexOf(':') > -1 ? req.query.cht.split(':')[1] : 'dot';
     const opts = {
@@ -281,8 +274,6 @@ function handleGChart(req, res) {
         res.writeHead(200, {
           'Content-Type': format === 'png' ? 'image/png' : 'image/svg+xml',
           'Content-Length': buf.length,
-
-          // 1 week cache
           'Cache-Control': isDev ? 'no-cache' : 'public, max-age=604800',
         });
         res.end(buf);
@@ -305,7 +296,6 @@ function handleGChart(req, res) {
   }
 
   if (req.query.format === 'chartjs-config') {
-    // Chart.js config
     res.writeHead(200, {
       'Content-Type': 'application/json',
     });
@@ -317,16 +307,14 @@ function handleGChart(req, res) {
     converted.width,
     converted.height,
     converted.backgroundColor,
-    1.0 /* devicePixelRatio */,
-    '2.9.4' /* version */,
-    undefined /* format */,
+    1.0,
+    '2.9.4',
+    undefined,
     converted.chart,
   ).then((buf) => {
     res.writeHead(200, {
       'Content-Type': 'image/png',
       'Content-Length': buf.length,
-
-      // 1 week cache
       'Cache-Control': isDev ? 'no-cache' : 'public, max-age=604800',
     });
     res.end(buf);
@@ -336,7 +324,6 @@ function handleGChart(req, res) {
 
 app.get('/chart', (req, res) => {
   if (req.query.cht) {
-    // This is a Google Image Charts-compatible request.
     handleGChart(req, res);
     return;
   }
@@ -426,8 +413,6 @@ app.get('/qr', (req, res) => {
       res.writeHead(200, {
         'Content-Type': format === 'png' ? 'image/png' : 'image/svg+xml',
         'Content-Length': buf.length,
-
-        // 1 week cache
         'Cache-Control': isDev ? 'no-cache' : 'public, max-age=604800',
       });
       res.end(buf);
@@ -442,12 +427,10 @@ app.get('/qr', (req, res) => {
 app.get('/gchart', handleGChart);
 
 app.get('/healthcheck', (req, res) => {
-  // A lightweight healthcheck endpoint.
   res.send({ success: true, version: packageJson.version });
 });
 
 app.get('/healthcheck/chart', (req, res) => {
-  // A heavier healthcheck endpoint that redirects to a unique chart.
   const labels = [...Array(5)].map(() => Math.random());
   const data = [...Array(5)].map(() => Math.random());
   const template = `
@@ -488,15 +471,12 @@ if (!isDev) {
     }, 10 * 1000);
   };
 
-  // listen for TERM signal .e.g. kill
   process.on('SIGTERM', gracefulShutdown);
-
-  // listen for INT signal e.g. Ctrl-C
   process.on('SIGINT', gracefulShutdown);
-
   process.on('SIGABRT', () => {
     logger.info('Caught SIGABRT');
   });
 }
 
 module.exports = app;
+
