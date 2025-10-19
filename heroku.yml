@@ -2,12 +2,11 @@
 
 build:
   docker:
-    # Tells Heroku to build the Docker image
-    # using the Dockerfile located in your "web" directory.
+    # This tells Heroku to build the Docker image using the
+    # Dockerfile located in the root directory.
     web: Dockerfile
 
 run:
   # This is the command to start the QuickChart server.
-  # QuickChart's "node index.js" script is designed to
-  # automatically listen on the $PORT variable provided by Heroku.
+  # It automatically uses the $PORT provided by Heroku.
   web: node index.js
