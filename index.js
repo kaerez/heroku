@@ -58,7 +58,7 @@ if (process.env.RATE_LIMIT_PER_MIN) {
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Updated root message with the correct link
+// Updated root message with the correct link and syntax
 app.get('/', (req, res) => {
   res.send(`
     <h1>QuickChart Image API</h1>
