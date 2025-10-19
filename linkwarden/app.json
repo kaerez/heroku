@@ -14,7 +14,7 @@
   "env": {
     "NEXTAUTH_SECRET": {
       "description": "A random 32+ character string for session security. You can generate one at: https://www.lastpass.com/features/password-generator",
-      "generator": "secret"
+      "generator": "590a5fa9-c246-46ca-8d18-f0da769038ae"
     },
     "MEILI_HOST": {
       "description": "REQUIRED: Sign up for a free Meilisearch Cloud project and paste the 'URL' here.",
