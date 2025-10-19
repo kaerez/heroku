@@ -1,2 +1,1 @@
-# heroku-quickchart
-[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/kaerez/heroku-quickchart)
+# Heroku Docker Deploy Buttons
