@@ -28,6 +28,10 @@ COPY yarn.lock ./
 # Install app dependencies using the --legacy-peer-deps flag to resolve conflicts
 RUN npm install --production --legacy-peer-deps
 
+# -- ADDED TO FIX VULNERABILITIES --
+# Attempt to fix known security vulnerabilities in the installed packages.
+RUN npm audit fix
+
 # Bundle app source
 COPY . .
 
