@@ -4,7 +4,7 @@ build:
   docker:
     # Tells Heroku to build the Docker image
     # using the Dockerfile located in your "web" directory.
-    web: web/Dockerfile
+    web: Dockerfile
 
 run:
   # This is the command to start the QuickChart server.
