@@ -19,11 +19,12 @@ RUN apt-get update && apt-get install -y \
     fonts-noto-color-emoji \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy package.json and package-lock.json
+# Copy package.json and yarn.lock
 COPY package*.json ./
+COPY yarn.lock ./
 
-# Install app dependencies
-RUN npm install --production
+# Install app dependencies using the --legacy-peer-deps flag to resolve conflicts
+RUN npm install --production --legacy-peer-deps
 
 # Bundle app source
 COPY . .
@@ -33,3 +34,4 @@ EXPOSE 3400
 
 # Define the command to run your app
 CMD [ "node", "index.js" ]
+
