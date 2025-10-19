@@ -1,0 +1,10 @@
+# This file tells Google Cloud Build how to build the Docker image.
+steps:
+  # Step 1: Build the Docker image using the Dockerfile in the current directory.
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/quickchart:$COMMIT_SHA', '.']
+
+# After building, push the image to Google Container Registry.
+# The "Run on Google Cloud" button will then use this image to deploy the service.
+images:
+  - 'gcr.io/$PROJECT_ID/quickchart:$COMMIT_SHA'
