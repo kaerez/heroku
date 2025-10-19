@@ -1,9 +1,12 @@
 const path = require('path');
-const fs = require('fs'); // Import the file system module
+const fs = require('fs');
 const express = require('express');
 const javascriptStringify = require('javascript-stringify').stringify;
 const qs = require('qs');
 const text2png = require('text2png');
+const axios = require('axios');
+const Jimp = require('jimp');
+const QrCodeReader = require('qrcode-reader');
 
 const packageJson = require('./package.json');
 const telemetry = require('./telemetry');
@@ -18,21 +21,15 @@ const app = express();
 
 // --- START: Advanced Auth and Rate Limiting ---
 
-// In-memory store for request counts.
 const requestCounts = {};
-// Map to hold API keys and their associated limits.
 const apiKeys = new Map();
 
-// Helper to parse limit strings like "rps:10,rpm:600" or just "10"
 function parseLimits(limitString) {
   if (!limitString) return {};
-
-  // If the value is just a number, treat it as RPS
   const plainNumber = parseInt(limitString, 10);
   if (!isNaN(plainNumber) && String(plainNumber) === limitString) {
     return { rps: plainNumber };
   }
-
   const limits = {};
   limitString.split(',').forEach((part) => {
     const [key, value] = part.split(':');
@@ -44,28 +41,23 @@ function parseLimits(limitString) {
   return limits;
 }
 
-// Load keys and limits from environment variables on startup.
 logger.info('Initializing authentication and rate limiting...');
 for (const envVar in process.env) {
-  // Correctly match authn0, authn1, etc.
   const authMatch = envVar.match(/^authn(\d{1,4})$/);
   if (authMatch) {
     const keyIndex = authMatch[1];
     const apiKey = process.env[envVar];
-    // Correctly match limit0, limit1, etc.
     const limitString = process.env[`limit${keyIndex}`];
     const limits = parseLimits(limitString);
     apiKeys.set(apiKey, limits);
     logger.info(`Loaded API Key (index ${keyIndex}) with limits:`, limits);
   }
 }
-// Load anonymous limits
 const anonymousLimits = parseLimits(process.env.limita);
 apiKeys.set('_anonymous_', anonymousLimits);
 logger.info('Loaded anonymous user limits:', anonymousLimits);
 
 const authAndRateLimit = (req, res, next) => {
-  // 1. Get API key from request
   let key = '_anonymous_';
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -74,7 +66,6 @@ const authAndRateLimit = (req, res, next) => {
     key = req.query.key;
   }
 
-  // 2. Authenticate key
   if (!apiKeys.has(key)) {
     logger.warn(`Invalid API key provided from IP: ${req.ip}`);
     return failPng(res, 'Unauthorized: Invalid API key.', 401);
@@ -92,10 +83,9 @@ const authAndRateLimit = (req, res, next) => {
   }
   const counts = requestCounts[key];
 
-  // 3. Check and update counts for each window
   const check = (limit, unit, timestamp) => {
-    if (limit === undefined) return true; // No limit set for this window
-    if (limit === 0) return false; // Block all requests for this window
+    if (limit === undefined) return true;
+    if (limit === 0) return false;
     
     const countKey = `count_${unit}`;
     const tsKey = `ts_${unit}`;
@@ -136,15 +126,14 @@ app.set('query parser', (str) =>
 
 app.use(
   express.json({
-    limit: process.env.EXPRESS_JSON_LIMIT || '100kb',
+    limit: process.env.EXPRESS_JSON_LIMIT || '10mb', // Increased for base64 uploads
   }),
 );
 
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
 
 // --- Public Routes ---
-// These routes DO NOT require authentication and are defined before the middleware.
 app.get('/', (req, res) => {
   res.send(`
     <h1>QuickChart Image API</h1>
@@ -178,13 +167,10 @@ app.get('/healthcheck/chart', (req, res) => {
 
 
 // --- Protected Routes ---
-// Apply the auth and rate-limiting middleware to all routes defined below.
 app.use(authAndRateLimit);
 
-// Serve static files from the 'public' directory (now protected)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// MODIFIED Route for the interactive QR code page
 app.get('/qr-code-api', (req, res) => {
   const filePath = path.join(__dirname, 'public/qr-code-api.html');
   fs.readFile(filePath, 'utf8', (err, data) => {
@@ -192,8 +178,6 @@ app.get('/qr-code-api', (req, res) => {
       logger.error('Could not read qr-code-api.html', err);
       return res.status(500).send('Error loading page.');
     }
-
-    // Find the key from the request (header or query). Will be empty for anonymous.
     let apiKey = '';
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -201,15 +185,85 @@ app.get('/qr-code-api', (req, res) => {
     } else if (req.query.key) {
       apiKey = req.query.key;
     }
-
-    // Inject the key (or an empty string) into a placeholder in the HTML
     const modifiedHtml = data.replace(
-      "const apiKey = ''", // Placeholder in the HTML
-      `const apiKey = '${apiKey}'`  // Injected key
+      "const apiKey = ''",
+      `const apiKey = '${apiKey}'`
     );
-
     res.send(modifiedHtml);
   });
+});
+
+// NEW QR Read Endpoint
+app.all('/qr-read', async (req, res) => {
+  if (req.method !== 'GET' && req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
+
+  let imageUrl;
+  let imageBase64;
+
+  if (req.method === 'GET') {
+    imageUrl = req.query.url;
+  } else { // POST
+    imageUrl = req.body.url;
+    imageBase64 = req.body.image;
+  }
+
+  if (!imageUrl && !imageBase64) {
+    return res.status(400).json({ error: 'Please provide either a URL or base64 encoded image' });
+  }
+
+  let imageBuffer;
+  try {
+    if (imageUrl) {
+      const response = await axios.get(imageUrl, {
+        responseType: 'arraybuffer',
+        timeout: 10000, // 10 second timeout
+        maxContentLength: 10 * 1024 * 1024, // 10MB limit
+      });
+      imageBuffer = Buffer.from(response.data, 'binary');
+    } else {
+      imageBuffer = Buffer.from(imageBase64, 'base64');
+      if (imageBuffer.length > 10 * 1024 * 1024) {
+         return res.status(400).json({ error: 'Image size exceeds the 10MB limit.' });
+      }
+    }
+
+    const image = await Jimp.read(imageBuffer);
+    const qr = new QrCodeReader();
+    
+    // qrcode-reader uses a callback, so we wrap it in a promise
+    const readQrCode = () => new Promise((resolve, reject) => {
+      qr.callback = (err, value) => {
+        if (err) {
+          return reject(err);
+        }
+        resolve(value);
+      };
+      qr.decode(image.bitmap);
+    });
+
+    const value = await readQrCode();
+
+    if (value) {
+      res.status(200).json({ result: value.result });
+    } else {
+      res.status(500).json({ error: 'No QR code could be found in the image.' });
+    }
+
+  } catch (error) {
+    logger.error('Error in /qr-read endpoint:', error);
+    if (error.code === 'ECONNABORTED') {
+       return res.status(408).json({ error: 'Request timeout fetching image URL.' });
+    }
+    if (error.isAxiosError) {
+        if (error.response) {
+            return res.status(error.response.status).json({ error: `Failed to fetch image from URL: ${error.message}` });
+        }
+        return res.status(500).json({ error: `Network error fetching image URL: ${error.message}` });
+    }
+    res.status(500).json({ error: 'Internal Server Error: Failed to process the QR code. Make sure it is a valid and clear image.' });
+  }
 });
 
 
