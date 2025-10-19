@@ -56,10 +56,20 @@ if (process.env.RATE_LIMIT_PER_MIN) {
   app.use('/chart', limiter);
 }
 
+// Serve static files from the 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
+
 app.get('/', (req, res) => {
   res.send(
-    'QuickChart is running!<br><br><a href="/healthcheck/">Healthcheck</a><br><br><a href="https://quickchart.io/"></a>',
+    'QuickChart is running!<br><br>
+    <a href="/qr-code-api.html">Interactive QR Code Builder</a><br><br>
+    <a href="/healthcheck/">Healthcheck</a><br><br><a href="https://quickchart.io/"></a>',
   );
+});
+
+// NEW route for the interactive QR code page
+app.get('/qr-code-api', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/qr-code-api.html'));
 });
 
 app.post('/telemetry', (req, res) => {
