@@ -47,11 +47,13 @@ function parseLimits(limitString) {
 // Load keys and limits from environment variables on startup.
 logger.info('Initializing authentication and rate limiting...');
 for (const envVar in process.env) {
-  const authMatch = envVar.match(/^authn\[(\d{1,4})\]$/);
+  // Correctly match authn0, authn1, etc.
+  const authMatch = envVar.match(/^authn(\d{1,4})$/);
   if (authMatch) {
     const keyIndex = authMatch[1];
     const apiKey = process.env[envVar];
-    const limitString = process.env[`limit[${keyIndex}]`];
+    // Correctly match limit0, limit1, etc.
+    const limitString = process.env[`limit${keyIndex}`];
     const limits = parseLimits(limitString);
     apiKeys.set(apiKey, limits);
     logger.info(`Loaded API Key (index ${keyIndex}) with limits:`, limits);
