@@ -13,6 +13,8 @@ RUN apt-get update && apt-get install -y \
     libjpeg-dev \
     libgif-dev \
     librsvg2-dev \
+    # -- ADDED TO FIX GIT-BASED NPM DEPENDENCIES --
+    git \
     # -- ADDED FOR WORDCLOUD & WATERMARK SUPPORT --
     # Install a common set of fonts used by wordcloud and watermarking.
     fonts-lato \
