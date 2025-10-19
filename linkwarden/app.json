@@ -13,15 +13,15 @@
   ],
   "env": {
     "NEXTAUTH_SECRET": {
-      "description": "A random 32+ character string for session security. You can generate one at: https://www.lastpass.com/features/password-generator",
+      "description": "A random 32+ character string for session security. You can generate one at: https://www.uuidgenerator.net/version4",
       "generator": "590a5fa9-c246-46ca-8d18-f0da769038ae"
     },
     "MEILI_HOST": {
-      "description": "REQUIRED: Sign up for a free Meilisearch Cloud project and paste the 'URL' here.",
+      "description": "OPTIONAL: Sign up for a free Meilisearch Cloud project and paste the 'URL' here.",
       "value": "https://your-project-id.meilisearch.cloud"
     },
     "MEILI_MASTER_KEY": {
-      "description": "REQUIRED: From your Meilisearch Cloud project, paste the 'Default Admin API Key' here.",
+      "description": "From your Meilisearch Cloud project, paste the 'Default Admin API Key' here.",
       "value": ""
     }
   },
