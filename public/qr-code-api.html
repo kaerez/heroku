@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Builder - QuickChart</title>
+    <link rel="stylesheet" href="https://unpkg.com/bamboo.css/dist/bamboo.min.css">
+    <style>
+        /* General styling for the QR code builder */
+        .qr-builder {
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 2rem;
+        }
+
+        /* Responsive layout for smaller screens */
+        @media (max-width: 768px) {
+            .qr-builder {
+                grid-template-columns: 1fr;
+            }
+            .preview-pane {
+                order: -1; /* Move preview to the top on mobile */
+            }
+        }
+
+        /* Styling for the tab navigation */
+        .tab-nav {
+            display: flex;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #e0e0e0;
+            margin-bottom: 1.5rem;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #555;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+        }
+
+        .tab-button.active {
+            color: #007bff;
+            border-bottom-color: #007bff;
+        }
+
+        /* Styling for the tab content panes */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Form group styling */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        /* Input and select field styling */
+        input[type="text"],
+        input[type="url"],
+        input[type="number"],
+        input[type="color"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+            box-sizing: border-box; /* Important for consistent sizing */
+        }
+
+        /* Specific styling for color inputs to show the swatch */
+        input[type="color"] {
+            padding: 0.25rem;
+            height: 40px;
+        }
+
+        /* Advanced options toggle */
+        .advanced-options-toggle {
+            color: #007bff;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-top: 1.5rem;
+        }
+
+        .advanced-options {
+            display: none;
+            margin-top: 1rem;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 1.5rem;
+        }
+
+        /* Preview pane styling */
+        .preview-pane {
+            text-align: center;
+        }
+
+        .preview-pane img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #e0e0e0;
+            padding: 0.5rem;
+            border-radius: 4px;
+        }
+
+        .preview-pane code {
+            margin-top: 1rem;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Build your own QR code</h1>
+        <p>Use the interactive editor below to generate a QR code image URL for your app, email, or other project.</p>
+    </header>
+
+    <div class="qr-builder">
+        <div class="form-pane">
+            <nav class="tab-nav">
+                <button class="tab-button active" data-tab="text">Text/URL</button>
+                <button class="tab-button" data-tab="wifi">WiFi</button>
+                <button class="tab-button" data-tab="vcard">vCard</button>
+                <button class="tab-button" data-tab="phone">Phone</button>
+                <button class="tab-button" data-tab="email">Email</button>
+                <button class="tab-button" data-tab="sms">SMS</button>
+                <button class="tab-button" data-tab="location">Location</button>
+            </nav>
+
+            <div id="text-tab" class="tab-content active">
+                <div class="form-group">
+                    <label for="text-data">QR data (text or URL)</label>
+                    <textarea id="text-data">Hello world</textarea>
+                </div>
+            </div>
+            <div id="wifi-tab" class="tab-content">
+                <div class="form-group">
+                    <label for="wifi-ssid">SSID</label>
+                    <input type="text" id="wifi-ssid" placeholder="Network name">
+                </div>
+                <div class="form-group">
+                    <label for="wifi-password">Password</label>
+                    <input type="text" id="wifi-password" placeholder="Network password">
+                </div>
+                <div class="form-group">
+                    <label for="wifi-encryption">Encryption</label>
+                    <select id="wifi-encryption">
+                        <option value="WPA">WPA/WPA2</option>
+                        <option value="WEP">WEP</option>
+                        <option value="">None</option>
+                    </select>
+                </div>
+            </div>
+             <div id="vcard-tab" class="tab-content">
+                <div class="form-group">
+                    <label for="vcard-name">Name</label>
+                    <input type="text" id="vcard-name" placeholder="John Smith">
+                </div>
+                 <div class="form-group">
+                    <label for="vcard-org">Organization</label>
+                    <input type="text" id="vcard-org" placeholder="Acme Inc.">
+                </div>
+                <div class="form-group">
+                    <label for="vcard-title">Title</label>
+                    <input type="text" id="vcard-title" placeholder="CEO">
+                </div>
+                <div class="form-group">
+                    <label for="vcard-phone">Phone</label>
+                    <input type="text" id="vcard-phone" placeholder="(123) 456-7890">
+                </div>
+                <div class="form-group">
+                    <label for="vcard-email">Email</label>
+                    <input type="text" id="vcard-email" placeholder="john.smith@acme.com">
+                </div>
+                 <div class="form-group">
+                    <label for="vcard-url">Website</label>
+                    <input type="url" id="vcard-url" placeholder="https://acme.com">
+                </div>
+            </div>
+            <div id="phone-tab" class="tab-content">
+                <div class="form-group">
+                    <label for="phone-number">Phone Number</label>
+                    <input type="text" id="phone-number" placeholder="(123) 456-7890">
+                </div>
+            </div>
+            <div id="email-tab" class="tab-content">
+                 <div class="form-group">
+                    <label for="email-address">Email Address</label>
+                    <input type="text" id="email-address" placeholder="recipient@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="email-subject">Subject</label>
+                    <input type="text" id="email-subject" placeholder="Hello">
+                </div>
+            </div>
+            <div id="sms-tab" class="tab-content">
+                <div class="form-group">
+                    <label for="sms-number">Phone Number</label>
+                    <input type="text" id="sms-number" placeholder="(123) 456-7890">
+                </div>
+                <div class="form-group">
+                    <label for="sms-body">Message</label>
+                    <textarea id="sms-body"></textarea>
+                </div>
+            </div>
+            <div id="location-tab" class="tab-content">
+                <div class="form-group">
+                    <label for="location-latitude">Latitude</label>
+                    <input type="text" id="location-latitude" placeholder="e.g., 40.7128">
+                </div>
+                <div class="form-group">
+                    <label for="location-longitude">Longitude</label>
+                    <input type="text" id="location-longitude" placeholder="e.g., -74.0060">
+                </div>
+            </div>
+
+            <hr>
+            
+            <div class="form-group">
+                <label for="size">Size (px)</label>
+                <input type="number" id="size" value="200">
+            </div>
+            <div class="form-group">
+                <label for="margin">Margin (blocks)</label>
+                <input type="number" id="margin" value="4">
+            </div>
+            <div class="form-group">
+                <label for="foreground">Color (foreground)</label>
+                <input type="color" id="foreground" value="#000000">
+            </div>
+            <div class="form-group">
+                <label for="background">Color (background)</label>
+                <input type="color" id="background" value="#ffffff">
+            </div>
+            
+            <div class="advanced-options-toggle" id="advanced-toggle">
+                ▼ Advanced options
+            </div>
+            <div class="advanced-options" id="advanced-options-pane">
+                 <div class="form-group">
+                    <label for="logo-url">Logo URL</label>
+                    <input type="url" id="logo-url" placeholder="https://...">
+                </div>
+                <div class="form-group">
+                    <label for="ec-level">Error correction</label>
+                    <select id="ec-level">
+                        <option value="L">Low</option>
+                        <option value="M" selected>Medium</option>
+                        <option value="Q">Quartile</option>
+                        <option value="H">High</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="format">Format</label>
+                    <select id="format">
+                        <option value="png">PNG</option>
+                        <option value="svg">SVG</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="preview-pane">
+            <img id="qr-image" alt="Live QR Code Preview" />
+            <code id="qr-url"></code>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const inputs = document.querySelectorAll('input, textarea, select');
+            const qrImage = document.getElementById('qr-image');
+            const qrUrlElement = document.getElementById('qr-url');
+            const tabs = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const advancedToggle = document.getElementById('advanced-toggle');
+            const advancedPane = document.getElementById('advanced-options-pane');
+
+            let activeTab = 'text';
+
+            function getQrText() {
+                switch (activeTab) {
+                    case 'wifi':
+                        const ssid = document.getElementById('wifi-ssid').value;
+                        const password = document.getElementById('wifi-password').value;
+                        const encryption = document.getElementById('wifi-encryption').value;
+                        return `WIFI:S:${ssid};T:${encryption};P:${password};;`;
+                    case 'vcard':
+                        const name = document.getElementById('vcard-name').value;
+                        const org = document.getElementById('vcard-org').value;
+                        const title = document.getElementById('vcard-title').value;
+                        const phone = document.getElementById('vcard-phone').value;
+                        const email = document.getElementById('vcard-email').value;
+                        const url = document.getElementById('vcard-url').value;
+                        return `BEGIN:VCARD\nVERSION:3.0\nN:${name}\nORG:${org}\nTITLE:${title}\nTEL:${phone}\nEMAIL:${email}\nURL:${url}\nEND:VCARD`;
+                    case 'phone':
+                        const phoneNumber = document.getElementById('phone-number').value;
+                        return `tel:${phoneNumber}`;
+                    case 'email':
+                        const emailAddress = document.getElementById('email-address').value;
+                        const emailSubject = document.getElementById('email-subject').value;
+                        return `mailto:${emailAddress}?subject=${encodeURIComponent(emailSubject)}`;
+                    case 'sms':
+                        const smsNumber = document.getElementById('sms-number').value;
+                        const smsBody = document.getElementById('sms-body').value;
+                        return `smsto:${smsNumber}:${encodeURIComponent(smsBody)}`;
+                    case 'location':
+                        const lat = document.getElementById('location-latitude').value;
+                        const lon = document.getElementById('location-longitude').value;
+                        return `geo:${lat},${lon}`;
+                    case 'text':
+                    default:
+                        return document.getElementById('text-data').value;
+                }
+            }
+
+            function updateQrCode() {
+                const params = new URLSearchParams();
+
+                // Build QR text based on active tab
+                const text = getQrText();
+                if (text) {
+                    params.append('text', text);
+                }
+
+                // Common parameters
+                const size = document.getElementById('size').value;
+                if (size) params.append('size', size);
+
+                const margin = document.getElementById('margin').value;
+                if (margin) params.append('margin', margin);
+
+                const foreground = document.getElementById('foreground').value.substring(1);
+                if (foreground) params.append('dark', foreground);
+
+                const background = document.getElementById('background').value.substring(1);
+                if (background) params.append('light', background);
+                
+                // Advanced parameters
+                if (advancedPane.style.display === 'block') {
+                    const logoUrl = document.getElementById('logo-url').value;
+                    if (logoUrl) params.append('centerImageUrl', logoUrl);
+
+                    const ecLevel = document.getElementById('ec-level').value;
+                    if (ecLevel) params.append('ecLevel', ecLevel);
+
+                    const format = document.getElementById('format').value;
+                    if (format) params.append('format', format);
+                }
+
+                // Use a relative URL to point to your self-hosted API endpoint
+                const qrUrl = `/qr?${params.toString()}`;
+                
+                qrImage.src = qrUrl;
+                qrUrlElement.textContent = qrUrl;
+            }
+
+            // Event listener for all input fields
+            inputs.forEach(input => {
+                input.addEventListener('input', updateQrCode);
+            });
+
+            // Event listener for tab switching
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Update active tab styles
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    // Show correct tab content
+                    activeTab = tab.dataset.tab;
+                    tabContents.forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    document.getElementById(`${activeTab}-tab`).classList.add('active');
+
+                    updateQrCode();
+                });
+            });
+            
+            // Event listener for advanced options
+            advancedToggle.addEventListener('click', () => {
+                const isVisible = advancedPane.style.display === 'block';
+                advancedPane.style.display = isVisible ? 'none' : 'block';
+                advancedToggle.textContent = (isVisible ? '▼' : '▲') + ' Advanced options';
+                updateQrCode();
+});
+
+            // Initial call to generate the first QR code
+            updateQrCode();
+        });
+    </script>
+</body>
+</html>
+
