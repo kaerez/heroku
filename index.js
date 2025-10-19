@@ -23,9 +23,16 @@ const requestCounts = {};
 // Map to hold API keys and their associated limits.
 const apiKeys = new Map();
 
-// Helper to parse limit strings like "rps:10,rpm:600"
+// Helper to parse limit strings like "rps:10,rpm:600" or just "10"
 function parseLimits(limitString) {
   if (!limitString) return {};
+
+  // If the value is just a number, treat it as RPS
+  const plainNumber = parseInt(limitString, 10);
+  if (!isNaN(plainNumber) && String(plainNumber) === limitString) {
+    return { rps: plainNumber };
+  }
+
   const limits = {};
   limitString.split(',').forEach((part) => {
     const [key, value] = part.split(':');
@@ -133,8 +140,9 @@ app.use(
 
 app.use(express.urlencoded({ extended: false }));
 
+
 // --- Public Routes ---
-app.use(express.static(path.join(__dirname, 'public')));
+// These routes DO NOT require authentication and are defined before the middleware.
 app.get('/', (req, res) => {
   res.send(`
     <h1>QuickChart Image API</h1>
@@ -143,9 +151,6 @@ app.get('/', (req, res) => {
     <p>Try our interactive <a href="/qr-code-api">QR Code Builder</a>.</p>
     <p><a href="/healthcheck">Healthcheck</a></p>
   `);
-});
-app.get('/qr-code-api', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/qr-code-api.html'));
 });
 app.post('/telemetry', (req, res) => {
   const chartCount = parseInt(req.body.chartCount, 10);
@@ -159,11 +164,30 @@ app.post('/telemetry', (req, res) => {
   }
   res.send({ success: true });
 });
+app.get('/healthcheck', (req, res) => {
+  res.send({ success: true, version: packageJson.version });
+});
+app.get('/healthcheck/chart', (req, res) => {
+  const labels = [...Array(5)].map(() => Math.random());
+  const data = [...Array(5)].map(() => Math.random());
+  const template = `{type:'bar',data:{labels:[${labels.join(',')}],datasets:[{data:[${data.join(',')}]}]}}`;
+  res.redirect(`/chart?c=${template}`);
+});
+
 
 // --- Protected Routes ---
-// Apply the new middleware to all chart and QR code generation routes.
-app.use(['/chart', '/qr', '/gchart'], authAndRateLimit);
+// Apply the auth and rate-limiting middleware to all routes defined below.
+app.use(authAndRateLimit);
 
+// Serve static files from the 'public' directory (now protected)
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Route for the interactive QR code page (now protected)
+app.get('/qr-code-api', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/qr-code-api.html'));
+});
+
+// All API routes are now implicitly protected by the app.use(authAndRateLimit) above
 app.get('/chart', (req, res) => {
   if (req.query.cht) {
     handleGChart(req, res);
@@ -468,25 +492,7 @@ function handleGChart(req, res) {
   });
   telemetry.count('chartCount');
 }
-app.get('/healthcheck', (req, res) => {
-  res.send({ success: true, version: packageJson.version });
-});
-app.get('/healthcheck/chart', (req, res) => {
-  const labels = [...Array(5)].map(() => Math.random());
-  const data = [...Array(5)].map(() => Math.random());
-  const template = `
-{
-  type: 'bar',
-  data: {
-    labels: [${labels.join(',')}],
-    datasets: [{
-      data: [${data.join(',')}]
-    }]
-  }
-}
-`;
-  res.redirect(`/chart?c=${template}`);
-});
+
 const port = process.env.PORT || 3400;
 const server = app.listen(port);
 const timeout = parseInt(process.env.REQUEST_TIMEOUT_MS, 10) || 5000;
