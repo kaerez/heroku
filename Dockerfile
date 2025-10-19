@@ -25,6 +25,10 @@ RUN apt-get update && apt-get install -y \
 COPY package*.json ./
 COPY yarn.lock ./
 
+# -- ADDED TO FIX SSH AUTHENTICATION ERROR --
+# Force git to use https instead of ssh for github dependencies
+RUN git config --global url."https://github.com/".insteadOf "git@github.com:"
+
 # Install app dependencies using the --legacy-peer-deps flag to resolve conflicts
 # and the modern --omit=dev flag instead of --production.
 RUN npm install --omit=dev --legacy-peer-deps
