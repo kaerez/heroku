@@ -2,7 +2,8 @@
 - [GH](https://github.com/typpo/quickchart)
 - [Web](https://quickchart.io/)
 
-[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/kaerez/heroku-quickchart)
+[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/kaerez/quickchart)
+[![Run on Google Cloud](https://storage.googleapis.com/cloudrun/button.svg)](https://console.cloud.google.com/cloudshell/editor?shellonly=true&cloudshell_image=gcr.io/cloudrun/button&cloudshell_git_repo=https://github.com/kaerez/quickchart)
 
 ### Advanced Authentication and Rate-Limiting
 
