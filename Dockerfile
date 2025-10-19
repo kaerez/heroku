@@ -26,11 +26,12 @@ COPY package*.json ./
 COPY yarn.lock ./
 
 # Install app dependencies using the --legacy-peer-deps flag to resolve conflicts
-RUN npm install --production --legacy-peer-deps
+# and the modern --omit=dev flag instead of --production.
+RUN npm install --omit=dev --legacy-peer-deps
 
 # -- ADDED TO FIX VULNERABILITIES --
-# Attempt to fix known security vulnerabilities in the installed packages.
-RUN npm audit fix
+# Attempt to fix known security vulnerabilities, forcing updates where possible.
+RUN npm audit fix --force
 
 # Bundle app source
 COPY . .
