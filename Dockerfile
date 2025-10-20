@@ -1,32 +1,36 @@
-FROM node:18-alpine3.17
+# --- Stage 1: Builder ---
+# Use the official Node.js 18 image from the Amazon ECR Public Gallery as a fallback for Docker Hub.
+FROM public.ecr.aws/docker/library/node:18-alpine AS builder
 
-ENV NODE_ENV production
+WORKDIR /app
 
-WORKDIR /quickchart
+# Copy package.json and package-lock.json first to leverage Docker layer caching.
+COPY package.json package-lock.json ./
 
-RUN apk add --upgrade apk-tools
-RUN apk add --no-cache --virtual .build-deps yarn git build-base g++ python3
-RUN apk add --no-cache --virtual .npm-deps cairo-dev pango-dev libjpeg-turbo-dev librsvg-dev
-RUN apk add --no-cache --virtual .fonts libmount ttf-dejavu ttf-droid ttf-freefont ttf-liberation font-noto font-noto-emoji fontconfig
-RUN apk add --no-cache --repository https://dl-cdn.alpinelinux.org/alpine/edge/community font-wqy-zenhei
-RUN apk add --no-cache libimagequant-dev
-RUN apk add --no-cache vips-dev
-RUN apk add --no-cache --virtual .runtime-deps graphviz
+# Install only production dependencies
+RUN npm ci --omit=dev
 
-COPY package*.json .
-COPY yarn.lock .
-RUN yarn install --production
+# Copy the rest of the application source code
+COPY . .
 
-RUN apk update
-RUN rm -rf /var/cache/apk/* && \
-    rm -rf /tmp/*
-RUN apk del .build-deps
+# --- Stage 2: Production ---
+# Use the same reliable base image for the final, slim production image.
+FROM public.ecr.aws/docker/library/node:18-alpine
 
-COPY *.js ./
-COPY lib/*.js lib/
-COPY LICENSE .
-COPY public/ public/
+WORKDIR /app
 
-EXPOSE 3400
+# Set Node.js to production mode
+ENV NODE_ENV=production
+# The port is set at runtime by the hosting platform, but we can set a default.
+ENV PORT=8080
 
-ENTRYPOINT ["node", "--max-http-header-size=65536", "index.js"]
+# Copy dependencies and application code from the builder stage
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/index.js ./index.js
+COPY --from=builder /app/package.json ./package.json
+
+EXPOSE $PORT
+
+# Run the application
+CMD ["node", "index.js"]
+
